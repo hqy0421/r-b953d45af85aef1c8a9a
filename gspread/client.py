@@ -13,6 +13,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 from google.auth.credentials import Credentials
 from requests import Response, Session
 
+from .drive import SpreadsheetCollection, collect_spreadsheets
 from .exceptions import APIError, SpreadsheetNotFound
 from .http_client import HTTPClient, HTTPClientType, ParamsType
 from .spreadsheet import Spreadsheet
@@ -125,6 +126,48 @@ class Client:
                 break
 
         return files, response
+
+    def collect_spreadsheets(self, folder: str) -> SpreadsheetCollection:
+        """Collect every accessible spreadsheet under a Drive folder tree.
+
+        Starting from ``folder``, this walks sub-folders page by page and
+        follows shortcuts that point at spreadsheets or folders.  Results are
+        deduplicated by the *real* target ID, so a file reachable through
+        several paths appears once, with the canonical path selected as
+        follows:
+
+        1. the path with the fewest segments wins;
+        2. between equally long paths, each segment's ``(name, ID)`` pair is
+           compared in order, the smallest winning.
+
+        A path segment created by a shortcut keeps the shortcut's name but
+        carries the target's ID.  A directory reachable through several entries
+        is listed only once, which also stops "back to the parent" cycles.
+
+        Shortcut targets that were deleted/trashed or that the authenticated
+        user cannot view are reported in
+        :attr:`~gspread.drive.SpreadsheetCollection.shortcut_failures` with a
+        distinct reason; they are never reported as collected spreadsheets.
+        Other request errors are recorded in
+        :attr:`~gspread.drive.SpreadsheetCollection.errors`, and make
+        :attr:`~gspread.drive.SpreadsheetCollection.complete` ``False``.
+
+        The target's actual MIME type is always used: the
+        ``shortcutDetails.targetMimeType`` hint may be stale and is ignored.
+
+        :param str folder: a folder ID, or a Drive folder URL such as
+            ``https://drive.google.com/drive/folders/<folder_id>``.
+
+        :returns: a :class:`~gspread.drive.SpreadsheetCollection`.
+
+        :raises gspread.exceptions.APIError: if the entry folder itself cannot
+            be read.
+        :raises gspread.exceptions.InvalidInputValue: if the entry is not an
+            accessible folder.
+
+        .. versionadded:: 6.3.0
+        """
+        return collect_spreadsheets(self.http_client, folder)
 
     def open(self, title: str, folder_id: Optional[str] = None) -> Spreadsheet:
         """Opens a spreadsheet.

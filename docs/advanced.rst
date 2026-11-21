@@ -69,3 +69,51 @@ Using ``Authlib`` instead of ``google-auth``. Similar to `google.auth.transport.
 
     # Fetch a cell range
     cell_list = wks.range('A1:B7')
+
+
+Collecting Spreadsheets From a Folder
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+:meth:`~gspread.Client.collect_spreadsheets` walks a Drive folder tree and
+returns every Google Sheet the authenticated user can access:
+
+.. code:: python
+
+   result = gc.collect_spreadsheets("1AbCdEfGhIjKlMnOpQrStUvWxYz")
+
+   for sheet in result:
+       print(sheet.id, sheet.display_path, sheet.url)
+
+Sub-folders are listed page by page, and Drive shortcuts are followed whether
+they point at a folder or at a spreadsheet.  A folder can also be given as its
+Drive URL, e.g. ``https://drive.google.com/drive/folders/<folder_id>``.
+
+Results are deduplicated by the target's real ID.  When a spreadsheet is
+reachable through several paths, the one with the fewest directory segments is
+kept; ties are broken by comparing each path segment's name then ID, in order.
+A path segment created by a shortcut keeps the shortcut's name, while its ID is
+the real target ID.  A folder reached through several entries is listed only
+once, which also makes cycles such as a shortcut back to a parent folder safe.
+
+Shortcut targets that are deleted, trashed, or not viewable are never reported
+as collected.  They appear separately, with a reason:
+
+.. code:: python
+
+   for failure in result.shortcut_failures:
+       print(failure.shortcut_name, failure.reason)
+       # deleted  /  permission_denied
+
+The actual MIME type of a shortcut target is always fetched; the
+``targetMimeType`` hint returned by the Drive API is ignored because it can be
+stale.
+
+If anything else goes wrong, the corresponding request error is recorded and
+``result.complete`` is ``False``, so you can tell that this tree's listing may
+be missing files:
+
+.. code:: python
+
+   if not result.complete:
+       for error in result.errors:
+           print(error.operation, error.path[-1].name, error.message)

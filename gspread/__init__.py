@@ -14,6 +14,15 @@ from .auth import (
 )
 from .cell import Cell
 from .client import Client
+from .drive import (
+    CollectedSpreadsheet,
+    CollectionError,
+    DirectoryRecord,
+    PathSegment,
+    ShortcutFailure,
+    ShortcutFailureReason,
+    SpreadsheetCollection,
+)
 from .exceptions import (
     GSpreadException,
     IncorrectCellLabel,
@@ -46,6 +55,15 @@ __all__ = [
     # from .http_client
     "BackOffHTTPClient",
     "HTTPClient",
+
+    # from .drive
+    "CollectedSpreadsheet",
+    "CollectionError",
+    "DirectoryRecord",
+    "PathSegment",
+    "ShortcutFailure",
+    "ShortcutFailureReason",
+    "SpreadsheetCollection",
 
     # from .spreadsheet
     "Spreadsheet",

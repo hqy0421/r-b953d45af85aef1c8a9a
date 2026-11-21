@@ -97,6 +97,8 @@ class DateTimeOption(StrEnum):
 
 class MimeType(StrEnum):
     google_sheets = "application/vnd.google-apps.spreadsheet"
+    folder = "application/vnd.google-apps.folder"
+    shortcut = "application/vnd.google-apps.shortcut"
     pdf = "application/pdf"
     excel = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     csv = "text/csv"
